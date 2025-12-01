@@ -1,0 +1,55 @@
+name: Pulumi Deploy
+
+on:
+  push:
+    branches: [main] # deploy on pushes to main
+  workflow_dispatch: # allow manual runs from the UI
+
+permissions:
+  id-token: write # REQUIRED for OIDC → STS
+  contents: read # allow checkout
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1
+      AWS_ROLE_ARN: arn:aws:iam::265058000489:role/<YOUR_ROLE_NAME>
+      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (assume role via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sanity check identity
+        run: aws sts get-caller-identity
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions-install-pulumi-cli@v2
+
+      # OPTIONAL: ensure dependencies are installed if you use npm/pip/etc
+      # - name: Install dependencies
+      #   run: |
+      #     npm install
+      # or: pip install -r requirements.txt
+
+      - name: Pulumi preview
+        uses: pulumi/actions@v5
+        with:
+          command: preview
+          stack-name: <pulumi-org-or-user>/<stack-name>
+
+      - name: Pulumi up (only on main)
+        if: github.ref == 'refs/heads/main'
+        uses: pulumi/actions@v5
+        with:
+          command: up
+          stack-name: <pulumi-org-or-user>/<stack-name>
+          args: --yes

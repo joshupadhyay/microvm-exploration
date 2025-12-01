@@ -1,0 +1,20 @@
+{
+  "name": "microvm-exploration",
+  "version": "1.0.0",
+  "description": "AWS infrastructure with SQS queue and EC2 instance using Pulumi",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@pulumi/pulumi": "^3.0.0",
+    "@pulumi/aws": "^6.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
