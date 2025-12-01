@@ -1,21 +1,25 @@
-name: Pulumi Deploy
+name: Pulumi Infrastructure
 
 on:
   push:
-    branches: [main] # deploy on pushes to main
+    branches: ["**"] # run on all branch pushes
+  pull_request:
+    branches: ["**"] # run on all PRs
   workflow_dispatch: # allow manual runs from the UI
 
 permissions:
   id-token: write # REQUIRED for OIDC → STS
   contents: read # allow checkout
+  pull-requests: write # allow commenting on PRs
 
 jobs:
-  deploy:
+  preview:
+    name: Preview Infrastructure Changes
     runs-on: ubuntu-latest
 
     env:
       AWS_REGION: us-east-1
-      AWS_ROLE_ARN: arn:aws:iam::265058000489:role/<YOUR_ROLE_NAME>
+      AWS_ROLE_ARN: ${{ secrets.AWS_OIDC_ROLE}}
       PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
     steps:
@@ -31,9 +35,6 @@ jobs:
       - name: Sanity check identity
         run: aws sts get-caller-identity
 
-      - name: Install Pulumi CLI
-        uses: pulumi/actions-install-pulumi-cli@v2
-
       # OPTIONAL: ensure dependencies are installed if you use npm/pip/etc
       # - name: Install dependencies
       #   run: |
@@ -41,15 +42,45 @@ jobs:
       # or: pip install -r requirements.txt
 
       - name: Pulumi preview
-        uses: pulumi/actions@v5
+        uses: pulumi/actions@v6
         with:
           command: preview
-          stack-name: <pulumi-org-or-user>/<stack-name>
+          stack-name: microvm-exploration
+          comment-on-pr: true # automatically comment preview output on PRs
 
-      - name: Pulumi up (only on main)
-        if: github.ref == 'refs/heads/main'
-        uses: pulumi/actions@v5
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: preview # wait for preview to complete successfully
+
+    env:
+      AWS_REGION: us-east-1
+      AWS_ROLE_ARN: ${{ secrets.AWS_OIDC_ROLE}}
+      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (assume role via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sanity check identity
+        run: aws sts get-caller-identity
+
+      # OPTIONAL: ensure dependencies are installed if you use npm/pip/etc
+      # - name: Install dependencies
+      #   run: |
+      #     npm install
+      # or: pip install -r requirements.txt
+
+      - name: Pulumi up
+        uses: pulumi/actions@v6
         with:
           command: up
-          stack-name: <pulumi-org-or-user>/<stack-name>
+          stack-name: microvm-exploration
           args: --yes
