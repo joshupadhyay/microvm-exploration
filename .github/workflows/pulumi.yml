@@ -1,5 +1,7 @@
 name: Pulumi Infrastructure
 
+## Split into two jobs – Preview, and Deploy
+
 on:
   push:
     branches: ["**"] # run on all branch pushes
@@ -35,12 +37,6 @@ jobs:
       - name: Sanity check identity
         run: aws sts get-caller-identity
 
-      # OPTIONAL: ensure dependencies are installed if you use npm/pip/etc
-      # - name: Install dependencies
-      #   run: |
-      #     npm install
-      # or: pip install -r requirements.txt
-
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -63,7 +59,7 @@ jobs:
 
     env:
       AWS_REGION: us-east-1
-      AWS_ROLE_ARN: ${{ secrets.AWS_OIDC_ROLE}}
+      AWS_ROLE_ARN: ${{ secrets.AWS_OIDC_ROLE}} // actions secrets
       PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
     steps:
@@ -79,11 +75,12 @@ jobs:
       - name: Sanity check identity
         run: aws sts get-caller-identity
 
-      # OPTIONAL: ensure dependencies are installed if you use npm/pip/etc
-      # - name: Install dependencies
-      #   run: |
-      #     npm install
-      # or: pip install -r requirements.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Dependencies
+        run: npm ci
 
       - name: Pulumi up
         uses: pulumi/actions@v6
