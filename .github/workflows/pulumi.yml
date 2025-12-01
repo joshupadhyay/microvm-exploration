@@ -45,7 +45,7 @@ jobs:
         uses: pulumi/actions@v6
         with:
           command: preview
-          stack-name: microvm-exploration
+          stack-name: my-vm-stack
           comment-on-pr: true # automatically comment preview output on PRs
 
   deploy:
@@ -82,5 +82,5 @@ jobs:
         uses: pulumi/actions@v6
         with:
           command: up
-          stack-name: microvm-exploration
+          stack-name: my-vm-stack
           args: --yes

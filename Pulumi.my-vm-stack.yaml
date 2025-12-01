@@ -1,0 +1,6 @@
+config:
+  aws:region: us-east-1
+  microvms:amiId: ami-XXXXXXXXXXXXXXXXX # PLACEHOLDER: Amazon Linux 2023 AMI ID for your region
+  microvms:keyName: YOUR-KEY-PAIR-NAME # PLACEHOLDER: Your EC2 key pair name
+  microvms:instanceType: t3.micro # PLACEHOLDER: Change instance type if needed
+  # microvms:vpcId: vpc-XXXXXXXXXXXXXXXXX  # PLACEHOLDER: Uncomment and set if you want to use a specific VPC
